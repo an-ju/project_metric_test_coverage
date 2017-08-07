@@ -19,7 +19,7 @@ class ProjectMetricTestCoverage
 
   def score
     @raw_data ||= remote_data
-    @score ||= @raw_data['GPA']
+    @score ||= @raw_data[:coverage]
   end
 
   def raw_data=(new)
@@ -44,7 +44,10 @@ class ProjectMetricTestCoverage
     # page = Nokogiri::HTML(open("https://codeclimate.com/github/hrzlvn/coursequestionbank"))
 
     raw_data = page.css('div.repos-show__overview-summary-number')
-    { GPA: raw_data[0].text[/\d.+/], issues: raw_data[1].text[/\d+/], coverage: raw_data[2].text[/\d+/] }
+    gpa = raw_data[0].nil? ? -1 : raw_data[0].text[/\d.+/]
+    issues = raw_data[1].nil? ? -1 : raw_data[1].text[/\d+/]
+    coverage = raw_data[2].nil? ? -1 : raw_data[2].text[/\d+/]
+    { GPA: gpa, issues: issues, coverage: coverage }
   end
 
 end
