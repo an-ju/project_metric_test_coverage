@@ -27,7 +27,7 @@ class ProjectMetricTestCoverage
   def score
     @raw_data ||= test_reports
     raw_data = @raw_data['data']
-    @score ||= raw_data.first.nil? ? 0.0 : raw_data.first['covered_percent']
+    @score ||= raw_data.first.nil? ? 0.0 : raw_data.first['attributes']['covered_percent']
   end
 
   def raw_data=(new)
