@@ -1,25 +1,33 @@
 require "project_metric_test_coverage/version"
-require 'nokogiri'
+require 'faraday'
 require 'open-uri'
+require 'date'
 require 'json'
 
 class ProjectMetricTestCoverage
 
   attr_reader :raw_data
 
-  def initialize credentials = {}, raw_data = nil
-    @identifier = "github#{URI::parse(credentials[:github_project]).path}"
+  def initialize(credentials = {}, raw_data = nil)
+    @project_url = credentials[:github_project]
+    @identifier = URI.parse(@project_url).path[1..-1]
+
+    @conn = Faraday.new(url: 'https://api.codeclimate.com/v1')
+    @conn.headers['Content-Type'] = 'application/vnd.api+json'
+    @conn.headers['Authorization'] = "Token token=#{credentials[:codeclimate_token]}"
+    set_project_id
     @raw_data = raw_data
   end
 
   def image
-    @raw_data ||= remote_data
-    @image ||= { chartType: 'test_coverage', data: @raw_data, titleText: 'Test Coverage' }.to_json
+    @raw_data ||= test_reports
+    @image ||= { chartType: 'test_coverage_v2', data: @raw_data['data'], titleText: 'Test Coverage' }.to_json
   end
 
   def score
-    @raw_data ||= remote_data
-    @score ||= @raw_data[:coverage]
+    @raw_data ||= test_reports
+    raw_data = @raw_data['data']
+    @score ||= raw_data.first.nil? ? 0.0 : raw_data.first['covered_percent']
   end
 
   def raw_data=(new)
@@ -28,26 +36,23 @@ class ProjectMetricTestCoverage
   end
 
   def refresh
-    @raw_data = remote_data
+    @raw_data = test_reports
     @score = @image = nil
     true
   end
 
   def self.credentials
-    %I[github_project]
+    %I[github_project codeclimate_token]
   end
 
   private
 
-  def remote_data
-    page = Nokogiri::HTML(open("https://codeclimate.com/#{@identifier}"))
-    # page = Nokogiri::HTML(open("https://codeclimate.com/github/hrzlvn/coursequestionbank"))
+  def set_project_id
+    @project_id = JSON.parse(@conn.get("repos?github_slug=#{@identifier}").body)['data'][0]['id']
+  end
 
-    raw_data = page.css('div.repos-show__overview-summary-number')
-    gpa = raw_data[0].nil? ? -1 : raw_data[0].text[/\d.+/]
-    issues = raw_data[1].nil? ? -1 : raw_data[1].text[/\d+/]
-    coverage = raw_data[2].nil? ? -1 : raw_data[2].text[/\d+/]
-    { GPA: gpa, issues: issues, coverage: coverage }
+  def test_reports
+    JSON.parse(@conn.get("repos/#{@project_id}/test_reports").body)
   end
 
 end
