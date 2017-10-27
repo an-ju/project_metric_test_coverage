@@ -6,7 +6,7 @@ require 'json'
 
 class ProjectMetricTestCoverage
 
-  attr_reader :raw_data
+  attr_reader :raw_data, :coverage_reports
 
   def initialize(credentials = {}, raw_data = nil)
     @project_url = credentials[:github_project]
@@ -20,14 +20,23 @@ class ProjectMetricTestCoverage
   end
 
   def image
-    @raw_data ||= test_reports
-    @image ||= { chartType: 'test_coverage_v2', data: @raw_data['data'], titleText: 'Test Coverage' }.to_json
+    @raw_data ||= project
+    p = @raw_data['data'].last
+    badge_link = p['links']['test_coverage_badge']
+    @coverage_reports ||= test_reports p['id']
+    @image ||= { chartType: 'test_coverage_v2',
+                 titleText: 'Test Coverage',
+                 data: {
+                   test_badge: open(badge_link).read,
+                   coverage: @coverage_reports
+                 } }.to_json
   end
 
   def score
-    @raw_data ||= test_reports
-    raw_data = @raw_data['data']
-    @score ||= raw_data.first.nil? ? 0.0 : raw_data.first['attributes']['covered_percent']
+    @raw_data ||= project
+    p = @raw_data['data'].last
+    @coverage_reports ||= test_reports p['id']
+    @score ||= @coverage_reports['data'].first.nil? ? -1 : @coverage_reports['data'].first['attributes']['covered_percent']
   end
 
   def raw_data=(new)
@@ -36,7 +45,7 @@ class ProjectMetricTestCoverage
   end
 
   def refresh
-    @raw_data = test_reports
+    @raw_data = project
     @score = @image = nil
     true
   end
@@ -47,13 +56,12 @@ class ProjectMetricTestCoverage
 
   private
 
-  def set_project_id
-    @project_id = JSON.parse(@conn.get("repos?github_slug=#{@identifier}").body)['data'][0]['id']
+  def project
+    JSON.parse(@conn.get("repos?github_slug=#{@identifier}").body)
   end
 
-  def test_reports
-    set_project_id
-    JSON.parse(@conn.get("repos/#{@project_id}/test_reports").body)
+  def test_reports(pid)
+    JSON.parse(@conn.get("repos/#{pid}/test_reports").body)
   end
 
 end
