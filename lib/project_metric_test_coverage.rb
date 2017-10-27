@@ -15,7 +15,7 @@ class ProjectMetricTestCoverage
     @conn = Faraday.new(url: 'https://api.codeclimate.com/v1')
     @conn.headers['Content-Type'] = 'application/vnd.api+json'
     @conn.headers['Authorization'] = "Token token=#{credentials[:codeclimate_token]}"
-    set_project_id
+
     @raw_data = raw_data
   end
 
@@ -52,6 +52,7 @@ class ProjectMetricTestCoverage
   end
 
   def test_reports
+    set_project_id
     JSON.parse(@conn.get("repos/#{@project_id}/test_reports").body)
   end
 
