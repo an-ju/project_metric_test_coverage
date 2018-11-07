@@ -18,7 +18,7 @@ class ProjectMetricTestCoverage
                         branch: "master",
                         commit_sha: "cd3811626d5f723130417735d10a132f285795cc",
                         committed_at: "2017-07-16T02:55:52.000Z",
-                        covered_percent: 84.946657957762,
+                        covered_percent: value,
                         rating: {
                             path: "/",
                             letter: _test_letter(value),
