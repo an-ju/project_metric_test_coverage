@@ -36,6 +36,10 @@ RSpec.describe ProjectMetricTestCoverage do
     expect(image[:data][:lowest_strength].first['id']).to eql('596ad7622df1731de500015e')
   end
 
+  it 'has non-empty file_coverage' do
+    expect(project_metric_test_coverage.instance_variable_get('@codeclimate_file_coverage')).to be_a(Array)
+  end
+
   it 'has the proper commit_sha' do
     expect(project_metric_test_coverage.obj_id).to eql('cd3811626d5f723130417735d10a132f285795cc')
   end

@@ -59,6 +59,7 @@ class ProjectMetricTestCoverage
     @codeclimate_file_coverage += resp['data']
     next_page = resp['links']['next']
     get_next_page(next_page)
+    @codeclimate_file_coverage
   end
 
   def least_covered
