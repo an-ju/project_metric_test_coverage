@@ -11,7 +11,7 @@ class ProjectMetricTestCoverage
   include ProjectMetricBase
 
   add_credentials %I[github_project codeclimate_token]
-  add_raw_data %I[codeclimate_project codeclimate_report codeclimate_file_coverage]
+  add_raw_data %w[codeclimate_project codeclimate_report codeclimate_file_coverage]
 
 
   def initialize(credentials = {}, raw_data = nil)
