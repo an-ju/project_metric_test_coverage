@@ -5,9 +5,14 @@ require 'open-uri'
 require 'date'
 require 'json'
 
-class ProjectMetricTestCoverage
+require 'project_metric_base'
 
-  attr_reader :raw_data, :coverage_reports
+class ProjectMetricTestCoverage
+  include ProjectMetricBase
+
+  add_credentials %I[github_project codeclimate_token]
+  add_raw_data %I[codeclimate_project codeclimate_report codeclimate_file_coverage]
+
 
   def initialize(credentials = {}, raw_data = nil)
     @project_url = credentials[:github_project]
@@ -17,7 +22,7 @@ class ProjectMetricTestCoverage
     @conn.headers['Content-Type'] = 'application/vnd.api+json'
     @conn.headers['Authorization'] = "Token token=#{credentials[:codeclimate_token]}"
 
-    @raw_data = raw_data
+    self.raw_data = raw_data
   end
 
   def image
@@ -25,69 +30,48 @@ class ProjectMetricTestCoverage
 
     { chartType: 'test_coverage',
       data: {
-        coverage_link: @p['links']['web_coverage'],
-        report: @report,
+        coverage_link: @codeclimate_project['links']['web_coverage'],
+        report: @codeclimate_report,
         least_covered: least_covered,
         lowest_strength: lowest_strength
       }
-    }.to_json
+    }
   end
 
-  def commit_sha
-    refresh unless @raw_data
-
-    @report['attributes']['commit_sha']
+  def obj_id
+    @codeclimate_report['attributes']['commit_sha']
   end
 
   def score
-    refresh unless @raw_data
-    @report['attributes']['rating']['measure']['value']
-  end
-
-  def raw_data=(new)
-    @raw_data = new
-    @score = @image = nil
-  end
-
-  def refresh
-    set_project
-    set_report
-    set_file_coverages
-    @raw_data = { project: @p, report: @report }.to_json
-    @score = @image = nil
-    true
-  end
-
-  def self.credentials
-    %I[github_project codeclimate_token]
+    @codeclimate_report['attributes']['rating']['measure']['value']
   end
 
   private
 
-  def set_project
-    @p = JSON.parse(@conn.get('repos', github_slug: @identifier).body)['data'].last
+  def codeclimate_project
+    @codeclimate_project = JSON.parse(@conn.get('repos', github_slug: @identifier).body)['data'].last
   end
 
-  def set_report
-    @report = JSON.parse(@conn.get("repos/#{@p['id']}/test_reports").body)['data'][0]
+  def codeclimate_report
+    @codeclimate_report = JSON.parse(@conn.get("repos/#{@codeclimate_project['id']}/test_reports").body)['data'][0]
   end
 
-  def set_file_coverages
-    @file_reports = []
-    next_page = "repos/#{@p['id']}/test_reports/#{@report['id']}/test_file_reports"
+  def codeclimate_file_coverage
+    @codeclimate_file_coverage = []
+    next_page = "repos/#{@codeclimate_project['id']}/test_reports/#{@codeclimate_report['id']}/test_file_reports"
     resp = JSON.parse(@conn.get(next_page, page: { size: 100 }).body)
-    @file_reports += resp['data']
+    @codeclimate_file_coverage += resp['data']
     next_page = resp['links']['next']
     get_next_page(next_page)
   end
 
   def least_covered
-    @file_reports.sort_by { |f| f['attributes']['covered_percent'] }.first(5)
+    @codeclimate_file_coverage.sort_by { |f| f['attributes']['covered_percent'] }.first(5)
   end
 
   def lowest_strength
-    @file_reports.select { |f| f['attributes']['covered_strength'] > 0 }
-                 .sort_by { |f| f['attributes']['covered_strength'] }.first(5)
+    @codeclimate_file_coverage.select { |f| f['attributes']['covered_strength'] > 0 }
+        .sort_by { |f| f['attributes']['covered_strength'] }.first(5)
   end
 
   def get_next_page(next_page)
@@ -98,7 +82,7 @@ class ProjectMetricTestCoverage
         req.headers['Authorization'] = @conn.headers['Authorization']
       end
       resp = JSON.parse(resp.body)
-      @file_reports += resp['data']
+      @codeclimate_file_coverage += resp['data']
       next_page = resp['links']['next']
     end
   end

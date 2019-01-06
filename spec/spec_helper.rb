@@ -1,5 +1,6 @@
 require "bundler/setup"
 require "project_metric_test_coverage"
+require 'webmock/rspec'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
