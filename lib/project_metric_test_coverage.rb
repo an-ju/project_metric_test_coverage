@@ -22,20 +22,16 @@ class ProjectMetricTestCoverage
     @conn.headers['Content-Type'] = 'application/vnd.api+json'
     @conn.headers['Authorization'] = "Token token=#{credentials[:codeclimate_token]}"
 
-    self.raw_data = raw_data
+    complete_with raw_data
   end
 
   def image
-    refresh unless @raw_data
-
     { chartType: 'test_coverage',
       data: {
         coverage_link: @codeclimate_project['links']['web_coverage'],
         report: @codeclimate_report,
         least_covered: least_covered,
-        lowest_strength: lowest_strength
-      }
-    }
+        lowest_strength: lowest_strength } }
   end
 
   def obj_id
