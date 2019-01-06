@@ -128,7 +128,7 @@ class ProjectMetricTestCoverage
                         }
                     }
                 ],
-            coverage_link: 'https://codeclimate.com/github/an-ju/projectscope/issues' } }.to_json
+            coverage_link: 'https://codeclimate.com/github/an-ju/projectscope/issues' } }
   end
 
   def self._test_letter(value)

@@ -40,8 +40,24 @@ RSpec.describe ProjectMetricTestCoverage do
     expect(project_metric_test_coverage.obj_id).to eql('cd3811626d5f723130417735d10a132f285795cc')
   end
 
-  it 'generates test files' do
-    expect(ProjectMetricTestCoverage.fake_data.length).to eql(3)
+  context 'data generator' do
+    it 'generates an array of data' do
+      expect(described_class.fake_data).to be_a(Array)
+    end
+
+    it 'sets data properly' do
+      data_item = described_class.fake_data.first
+      expect(data_item).to have_key(:score)
+      expect(data_item).to have_key(:image)
+    end
+
+    it 'sets image properly' do
+      image_data = described_class.fake_data.first[:image]
+      expect(image_data).to be_a(Hash)
+      expect(image_data[:chartType]).to be_a(String)
+      expect(image_data[:data]).to be_a(Hash)
+    end
+
   end
 
 end
