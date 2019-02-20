@@ -39,7 +39,7 @@ class ProjectMetricTestCoverage
   end
 
   def score
-    @codeclimate_report['attributes']['rating']['measure']['value']
+    @codeclimate_report['attributes']['covered_percent']
   end
 
   private
