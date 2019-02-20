@@ -4,7 +4,7 @@ class ProjectMetricTestCoverage
   end
 
   def self._test_data(value)
-    { image: _test_image(value), score: 100.0-value }
+    { image: _test_image(value), score: value }
   end
 
   def self._test_image(value)
