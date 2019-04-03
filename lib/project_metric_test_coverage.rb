@@ -26,6 +26,15 @@ class ProjectMetricTestCoverage
   end
 
   def image
+    if @codeclimate_project.nil?
+      return { chartType: 'error_message',
+               message: "Cannot find project #{@identifier}." }
+    end
+    if @codeclimate_report.nil?
+      return { chartType: 'error_message',
+               message: "No test report found for #{@identifier}." }
+    end
+
     { chartType: 'test_coverage',
       data: {
         coverage_link: @codeclimate_project['links']['web_coverage'],
@@ -39,6 +48,8 @@ class ProjectMetricTestCoverage
   end
 
   def score
+    return -1 if @codeclimate_report.nil?
+
     @codeclimate_report['attributes']['covered_percent']
   end
 
@@ -49,10 +60,19 @@ class ProjectMetricTestCoverage
   end
 
   def codeclimate_report
-    @codeclimate_report = JSON.parse(@conn.get("repos/#{@codeclimate_project['id']}/test_reports").body)['data'][0]
+    if @codeclimate_project.nil?
+      @codeclimate_report = nil
+    else
+      @codeclimate_report = JSON.parse(@conn.get("repos/#{@codeclimate_project['id']}/test_reports").body)['data'].first
+    end
   end
 
   def codeclimate_file_coverage
+    if @codeclimate_report.nil?
+      @codeclimate_file_coverage = nil
+      return
+    end
+
     @codeclimate_file_coverage = []
     next_page = "repos/#{@codeclimate_project['id']}/test_reports/#{@codeclimate_report['id']}/test_file_reports"
     resp = JSON.parse(@conn.get(next_page, page: { size: 100 }).body)
