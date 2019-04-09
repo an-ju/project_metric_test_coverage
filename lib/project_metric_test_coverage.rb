@@ -10,7 +10,7 @@ require 'project_metric_base'
 class ProjectMetricTestCoverage
   include ProjectMetricBase
 
-  add_credentials %I[github_project codeclimate_token]
+  add_credentials %I[github_project codeclimate_token github_main_branch]
   add_raw_data %w[codeclimate_project codeclimate_report codeclimate_file_coverage]
 
 
@@ -21,6 +21,7 @@ class ProjectMetricTestCoverage
     @conn = Faraday.new(url: 'https://api.codeclimate.com/v1')
     @conn.headers['Content-Type'] = 'application/vnd.api+json'
     @conn.headers['Authorization'] = "Token token=#{credentials[:codeclimate_token]}"
+    @github_branch = credentials[:github_main_branch].nil? ? 'master' : credentials[:github_main_branch]
 
     complete_with raw_data
   end
@@ -63,7 +64,8 @@ class ProjectMetricTestCoverage
     if @codeclimate_project.nil?
       @codeclimate_report = nil
     else
-      @codeclimate_report = JSON.parse(@conn.get("repos/#{@codeclimate_project['id']}/test_reports").body)['data'].first
+      @codeclimate_report = JSON.parse(@conn.get("repos/#{@codeclimate_project['id']}/test_reports").body)['data']
+      @codeclimate_report = @codeclimate_report.select { |rp| rp['attributes']['branch'].eql? @github_branch }.first
     end
   end
 
